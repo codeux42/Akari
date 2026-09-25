@@ -28,6 +28,7 @@ class ResolveRequest(BaseModel):
 class Bridge:
     def __init__(self) -> None:
         self.client = AsyncClient(timeout=Timeout(25), follow_redirects=False)
+        self.source_client = AsyncClient(timeout=Timeout(25), follow_redirects=True)
         self.site_url: str | None = None
         self.cache: dict[str, tuple[float, object]] = {}
         self.embeds: dict[str, float] = {}
@@ -35,17 +36,17 @@ class Bridge:
         self.resolve_limit = asyncio.Semaphore(4)
 
     async def start(self) -> None:
-        discovered_url = await find_site_url(self.client)
+        discovered_url = await find_site_url(self.source_client)
         if not discovered_url:
             raise RuntimeError("Anime-Sama n'a pas répondu au contrôle de domaine")
-        response = await self.client.get(discovered_url, follow_redirects=True)
+        response = await self.source_client.get(discovered_url)
         response.raise_for_status()
         self.site_url = f"{response.url}".rstrip("/") + "/"
 
     def api(self) -> AnimeSama:
         if not self.site_url:
             raise HTTPException(503, "Source indisponible")
-        return AnimeSama(self.site_url, client=self.client)
+        return AnimeSama(self.site_url, client=self.source_client)
 
     async def cached(self, key: str, load):
         held = self.cache.get(key)
@@ -103,6 +104,7 @@ async def lifespan(_: FastAPI):
     await bridge.start()
     yield
     await bridge.client.aclose()
+    await bridge.source_client.aclose()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -195,7 +197,7 @@ async def catalogue(search: str = Query(min_length=1, max_length=80)):
 
 @app.get("/api/v1/seasons")
 async def seasons(url: str = Query(min_length=1, max_length=600)):
-    page = Catalogue(bridge.catalogue_url(url))
+    page = Catalogue(bridge.catalogue_url(url), client=bridge.source_client)
     entries = await page.seasons()
     return {"items": [{"title": item.name, "url": item.url} for item in entries]}
 
@@ -203,7 +205,7 @@ async def seasons(url: str = Query(min_length=1, max_length=600)):
 @app.get("/api/v1/episodes")
 async def episodes(url: str = Query(min_length=1, max_length=700)):
     page_url = bridge.catalogue_url(url)
-    season = Season(page_url)
+    season = Season(page_url, client=bridge.source_client)
     entries = await season.episodes()
     output = []
     now = asyncio.get_running_loop().time()
