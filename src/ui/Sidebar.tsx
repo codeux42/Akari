@@ -68,7 +68,11 @@ export function Sidebar({ profile, email, onSignOut }: SidebarProps) {
         }}
       >
         <div className="app-drag flex h-[84px] shrink-0 items-center gap-3 px-[14px]">
-          <img src={`${import.meta.env.BASE_URL}android-chrome-192x192.png`} alt="Akari" className="h-9 w-9 shrink-0 object-contain" />
+          <img
+            src={`${import.meta.env.BASE_URL}android-chrome-192x192.png`}
+            alt="Akari"
+            className="h-9 w-9 shrink-0 object-contain"
+          />
           <div className="min-w-0 leading-none" style={fade}>
             <p className="whitespace-nowrap font-display text-lg font-extrabold tracking-wide">
               AKARI
