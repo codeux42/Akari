@@ -44,8 +44,10 @@ function routeHref(destination: SiteTab): string {
 
 function tabFromPathname(pathname: string): SiteTab {
   const base = routeBasePath();
-  const path = (pathname.startsWith(base) ? pathname.slice(base.length) : pathname)
-    .replace(/^\/+|\/+$/g, "");
+  const path = (pathname.startsWith(base) ? pathname.slice(base.length) : pathname).replace(
+    /^\/+|\/+$/g,
+    "",
+  );
   return NAV_ITEMS.find((item) => item.path === path)?.tab ?? "accueil";
 }
 
@@ -403,4 +405,3 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
     </main>
   );
 }
-

@@ -91,7 +91,9 @@ export function EpisodesPanel({
                   disabled={loading}
                   className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${selectedSeason === season.url ? "border-primary bg-primary text-white shadow-glow" : "border-line bg-bg/70 text-muted hover:border-primary/40 hover:text-text"}`}
                 >
-                  <span className="mr-2 text-xs opacity-70">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="mr-2 text-xs opacity-70">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                   {season.title}
                 </button>
               ))}

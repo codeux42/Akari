@@ -87,11 +87,9 @@ export function HomePage({
           </div>
         ) : (
           <div className="rounded-2xl border border-line bg-surface p-6 text-sm text-muted">
-            {featuredLoaded ? (
-              "Les animés récemment ajoutés sont momentanément indisponibles. Tu peux toujours parcourir le catalogue."
-            ) : (
-              "Chargement des animés…"
-            )}
+            {featuredLoaded
+              ? "Les animés récemment ajoutés sont momentanément indisponibles. Tu peux toujours parcourir le catalogue."
+              : "Chargement des animés…"}
           </div>
         )}
       </div>
@@ -135,7 +133,7 @@ export function HomePage({
             className="group rounded-2xl border border-line bg-surface p-5 text-left transition hover:-translate-y-1 hover:border-primary/50"
           >
             <Compass className="mb-5 text-primary" size={24} />
-              <h3 className="font-display text-lg font-bold">Explorer le catalogue</h3>
+            <h3 className="font-display text-lg font-bold">Explorer le catalogue</h3>
             <p className="mt-2 text-sm leading-6 text-muted">
               Recherche un titre et trouve ses saisons.
             </p>

@@ -4,10 +4,9 @@ import type { PlanningDay } from "./api.ts";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function planningDate(value: string, today: Date): Date | null {
-  const match =
-    /^(?:(\d{4})-(\d{1,2})-(\d{1,2})|(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?)$/.exec(
-      value.trim(),
-    );
+  const match = /^(?:(\d{4})-(\d{1,2})-(\d{1,2})|(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?)$/.exec(
+    value.trim(),
+  );
   if (!match) return null;
 
   const year = Number(match[1] ?? match[6] ?? today.getFullYear());
@@ -46,9 +45,7 @@ export function UpcomingGrid({
     <section>
       <div className="mb-4 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            À venir
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">À venir</p>
           <h2 className="mt-2 font-display text-2xl font-bold">Prochaines sorties</h2>
         </div>
         <p className="text-xs text-muted">Planning Anime-Sama</p>
