@@ -113,7 +113,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "P
 
 @app.get("/health")
 async def health():
-    return {"ok": bridge.site_url is not None}
+    return {"ok": bridge.site_url is not None, "source": urlsplit(bridge.site_url or "").hostname, "redirects": bridge.source_client.follow_redirects}
 
 
 @app.get("/api/v1/featured")
