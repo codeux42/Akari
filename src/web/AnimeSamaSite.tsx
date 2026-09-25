@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { CalendarDays, Search, Tv } from "lucide-react";
+import { CalendarDays, House, Search, Tv, UserRound } from "lucide-react";
 import {
   readEpisodes,
   readPlanning,
@@ -18,10 +18,14 @@ import { EpisodesPanel } from "./EpisodesPanel.tsx";
 import { PlanningGrid } from "./PlanningGrid.tsx";
 import { ReleaseGrid } from "./ReleaseGrid.tsx";
 import { VideoPlayer } from "./VideoPlayer.tsx";
+import { HomePage } from "./HomePage.tsx";
+import { ProfilePage } from "./ProfilePage.tsx";
 
 export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
   const base = apiBase.replace(/\/+$/, "");
-  const [tab, setTab] = useState<"nouveautes" | "planning" | "recherche">("nouveautes");
+  const [tab, setTab] = useState<"accueil" | "nouveautes" | "planning" | "recherche" | "profil">(
+    "accueil",
+  );
   const [releases, setReleases] = useState<Release[]>([]);
   const [days, setDays] = useState<PlanningDay[]>([]);
   const [query, setQuery] = useState("");
@@ -37,15 +41,11 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!base || (tab !== "nouveautes" && tab !== "planning")) return;
     async function refresh() {
-      if (!base) return;
       try {
-        const [freshReleases, freshDays] = await Promise.all([
-          readReleases(base),
-          readPlanning(base),
-        ]);
-        setReleases(freshReleases);
-        setDays(freshDays);
+        if (tab === "nouveautes") setReleases(await readReleases(base));
+        else setDays(await readPlanning(base));
         setError("");
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "Le service vidéo est injoignable");
@@ -54,7 +54,7 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
     void refresh();
     const timer = window.setInterval(() => void refresh(), 5 * 60_000);
     return () => window.clearInterval(timer);
-  }, [base]);
+  }, [base, tab]);
 
   async function openSeason(season: Season) {
     setSeasonUrl(season.url);
@@ -177,7 +177,14 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
               <p className="text-[10px] uppercase tracking-widest text-muted">Anime en ligne</p>
             </div>
           </div>
-          <nav className="flex gap-2">
+          <nav className="flex flex-wrap justify-end gap-2">
+            <button
+              onClick={() => setTab("accueil")}
+              className={`rounded-lg px-3 py-2 text-sm ${tab === "accueil" ? "bg-primary text-white" : "text-muted hover:bg-white/5"}`}
+            >
+              <House className="mr-2 inline" size={16} />
+              Accueil
+            </button>
             <button
               onClick={() => setTab("nouveautes")}
               className={`rounded-lg px-3 py-2 text-sm ${tab === "nouveautes" ? "bg-primary text-white" : "text-muted hover:bg-white/5"}`}
@@ -199,6 +206,13 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
               <Search className="mr-2 inline" size={16} />
               Recherche
             </button>
+            <button
+              onClick={() => setTab("profil")}
+              className={`rounded-lg px-3 py-2 text-sm ${tab === "profil" ? "bg-primary text-white" : "text-muted hover:bg-white/5"}`}
+            >
+              <UserRound className="mr-2 inline" size={16} />
+              Profil
+            </button>{" "}
           </nav>
         </div>
       </header>
@@ -212,6 +226,8 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
           </div>
         )}
         {busy && <p className="mb-4 text-sm text-muted">Chargement…</p>}
+        {tab === "accueil" && <HomePage onNavigate={setTab} />}
+        {tab === "profil" && <ProfilePage />}
         {tab === "nouveautes" && (
           <ReleaseGrid items={releases} onSelect={(release) => void openRelease(release)} />
         )}
