@@ -27,7 +27,7 @@ jobs:
       - run: npm run build:web
         env:
           GITHUB_ACTIONS: true
-          VITE_SAMA_API_BASE: ${{ vars.VITE_SAMA_API_BASE }}
+          VITE_SAMA_API_BASE: https://akari-anime-bridge.onrender.com
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_API_BASE: ${{ vars.NARTYA_API_BASE }}
