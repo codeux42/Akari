@@ -1,3 +1,10 @@
+export type FeaturedAnime = {
+  title: string;
+  description: string;
+  language: string;
+  image: string;
+  url: string;
+};
 export type Release = {
   title: string;
   description: string;
@@ -83,6 +90,19 @@ export async function readPlanning(base: string): Promise<PlanningDay[]> {
   });
 }
 
+export async function readFeatured(base: string): Promise<FeaturedAnime[]> {
+  const root = record(await get(base, "/api/v1/featured"));
+  return list(root.items).map((item) => {
+    const row = record(item);
+    return {
+      title: string(row.title),
+      description: string(row.description),
+      language: string(row.language),
+      image: string(row.image),
+      url: string(row.url),
+    };
+  });
+}
 export async function searchAnime(base: string, query: string): Promise<AnimeEntry[]> {
   const root = record(await get(base, `/api/v1/catalogue?search=${encodeURIComponent(query)}`));
   return list(root.items).map((item) => {

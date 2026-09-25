@@ -1,8 +1,17 @@
 import { ArrowRight, CalendarDays, Compass, Sparkles, Tv } from "lucide-react";
+import type { FeaturedAnime } from "./api.ts";
 
 type Destination = "nouveautes" | "planning" | "recherche";
 
-export function HomePage({ onNavigate }: { onNavigate: (tab: Destination) => void }) {
+export function HomePage({
+  featured,
+  onSelect,
+  onNavigate,
+}: {
+  featured: FeaturedAnime[];
+  onSelect: (title: string) => void;
+  onNavigate: (tab: Destination) => void;
+}) {
   return (
     <section className="space-y-8">
       <div className="relative isolate overflow-hidden rounded-3xl border border-line bg-surface px-7 py-12 sm:px-12 sm:py-16">
@@ -28,10 +37,58 @@ export function HomePage({ onNavigate }: { onNavigate: (tab: Destination) => voi
       </div>
 
       <div>
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              A decouvrir
+            </p>
+            <h2 className="mt-2 font-display text-2xl font-bold">Anime recemment ajoutes</h2>
+          </div>
+          <button
+            onClick={() => onNavigate("nouveautes")}
+            className="text-sm font-semibold text-primary hover:underline"
+          >
+            Toutes les sorties
+          </button>
+        </div>
+        {featured.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {featured.map((anime) => (
+              <button
+                key={`${anime.title}-${anime.url}`}
+                onClick={() => onSelect(anime.title)}
+                className="overflow-hidden rounded-2xl border border-line bg-surface text-left transition hover:-translate-y-1 hover:border-primary/50"
+              >
+                {anime.image ? (
+                  <img
+                    src={anime.image}
+                    alt={anime.title}
+                    loading="lazy"
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                ) : (
+                  <div className="grid aspect-[3/4] place-items-center bg-gradient-to-br from-primary/30 to-surface p-3 text-center font-display font-bold">
+                    {anime.title}
+                  </div>
+                )}
+                <div className="p-3">
+                  <p className="line-clamp-2 text-sm font-semibold">{anime.title}</p>
+                  <p className="mt-1 text-xs text-muted">{anime.description || anime.language}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-line bg-surface p-6 text-sm text-muted">
+            Les anime recemment ajoutes sont momentanement indisponibles. Tu peux toujours parcourir
+            le catalogue.
+          </div>
+        )}
+      </div>
+
+      <div>
         <div className="mb-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            A decouvrir
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Explorer</p>
           <h2 className="mt-2 font-display text-2xl font-bold">Que veux-tu regarder ?</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-3">

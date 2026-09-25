@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays, House, Search, Tv, UserRound } from "lucide-react";
 import {
   readEpisodes,
+  readFeatured,
   readPlanning,
   readReleases,
   readSeasons,
@@ -9,6 +10,7 @@ import {
   searchAnime,
   type AnimeEntry,
   type Episode,
+  type FeaturedAnime,
   type PlanningDay,
   type Release,
   type Season,
@@ -27,6 +29,7 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
     "accueil",
   );
   const [releases, setReleases] = useState<Release[]>([]);
+  const [featured, setFeatured] = useState<FeaturedAnime[]>([]);
   const [days, setDays] = useState<PlanningDay[]>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AnimeEntry[]>([]);
@@ -41,10 +44,11 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!base || (tab !== "nouveautes" && tab !== "planning")) return;
+    if (!base || (tab !== "accueil" && tab !== "nouveautes" && tab !== "planning")) return;
     async function refresh() {
       try {
-        if (tab === "nouveautes") setReleases(await readReleases(base));
+        if (tab === "accueil") setFeatured(await readFeatured(base));
+        else if (tab === "nouveautes") setReleases(await readReleases(base));
         else setDays(await readPlanning(base));
         setError("");
       } catch (reason) {
@@ -226,7 +230,13 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
           </div>
         )}
         {busy && <p className="mb-4 text-sm text-muted">Chargement…</p>}
-        {tab === "accueil" && <HomePage onNavigate={setTab} />}
+        {tab === "accueil" && (
+          <HomePage
+            featured={featured}
+            onSelect={(title) => void openPlanned(title)}
+            onNavigate={setTab}
+          />
+        )}
         {tab === "profil" && <ProfilePage />}
         {tab === "nouveautes" && (
           <ReleaseGrid items={releases} onSelect={(release) => void openRelease(release)} />

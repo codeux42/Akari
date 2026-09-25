@@ -35,9 +35,12 @@ class Bridge:
         self.resolve_limit = asyncio.Semaphore(4)
 
     async def start(self) -> None:
-        self.site_url = await find_site_url(self.client)
-        if not self.site_url:
+        discovered_url = await find_site_url(self.client)
+        if not discovered_url:
             raise RuntimeError("Anime-Sama n'a pas répondu au contrôle de domaine")
+        response = await self.client.get(discovered_url, follow_redirects=True)
+        response.raise_for_status()
+        self.site_url = f"{response.url}".rstrip("/") + "/"
 
     def api(self) -> AnimeSama:
         if not self.site_url:
@@ -111,6 +114,31 @@ async def health():
     return {"ok": bridge.site_url is not None}
 
 
+@app.get("/api/v1/featured")
+async def featured():
+    async def load():
+        episodes = await bridge.api().new_episodes()
+        output = []
+        seen = set()
+        for item in episodes:
+            title = item.serie_name.strip()
+            if not title or title.casefold() in seen or "Anime" not in item.categories:
+                continue
+            seen.add(title.casefold())
+            output.append({
+                "title": title,
+                "description": item.descriptive,
+                "language": str(item.language),
+                "image": urljoin(bridge.site_url or "", item.image_url),
+                "url": item.page_url,
+            })
+            if len(output) == 18:
+                break
+        return output
+
+    items = await bridge.cached("featured", load)
+    return {"items": items}
+
 @app.get("/api/v1/planning")
 async def planning():
     days = await bridge.cached("planning", lambda: bridge.api().planning())
@@ -145,7 +173,7 @@ async def load_releases():
                 sources = {language: [player for group in groups for player in group] for language, groups in latest.languages.availables.items()}
                 for players in sources.values():
                     bridge.embeds.update({player: now + 1800 for player in players})
-                return {"title": item.serie_name, "description": item.descriptive, "language": item.language, "image": item.image_url, "url": item.page_url, "episode": latest.name, "sources": sources}
+                return {"title": item.serie_name, "description": item.descriptive, "language": item.language, "image": urljoin(bridge.site_url or "", item.image_url), "url": item.page_url, "episode": latest.name, "sources": sources}
             except Exception:
                 return None
 
@@ -162,7 +190,7 @@ async def releases():
 @app.get("/api/v1/catalogue")
 async def catalogue(search: str = Query(min_length=1, max_length=80)):
     entries = await bridge.api().search(search)
-    return {"items": [{"title": item.name, "alternatives": item.alternative_names, "genres": item.genres, "languages": sorted(item.languages), "image": item.image_url, "url": item.url} for item in entries[:40] if item.is_anime]}
+    return {"items": [{"title": item.name, "alternatives": item.alternative_names, "genres": item.genres, "languages": sorted(item.languages), "image": urljoin(bridge.site_url or "", item.image_url), "url": item.url} for item in entries[:40] if item.is_anime]}
 
 
 @app.get("/api/v1/seasons")
