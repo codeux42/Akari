@@ -50,14 +50,14 @@ function tabFromPathname(pathname: string): SiteTab {
 }
 
 function tabFromHash(hash: string): SiteTab {
-  const path = hash.slice(2).split("?")[0].replace(/^\/+|\/+$/g, "");
+  const path = (hash.slice(2).split("?")[0] ?? "").replace(/^\/+|\/+$/g, "");
   return NAV_ITEMS.find((item) => item.path === path)?.tab ?? "accueil";
 }
 
 function initialTab(): SiteTab {
   const recoveredRoute = new URLSearchParams(window.location.search).get("__route");
   if (recoveredRoute) {
-    const path = recoveredRoute.split(/[?#]/, 1)[0].replace(/^\/+|\/+$/g, "");
+    const path = (recoveredRoute.split(/[?#]/, 1)[0] ?? "").replace(/^\/+|\/+$/g, "");
     const item = NAV_ITEMS.find((candidate) => candidate.path === path);
     if (item) {
       const suffix = recoveredRoute.slice(path.length);
@@ -403,3 +403,4 @@ export function AnimeSamaSite({ apiBase }: { apiBase: string }) {
     </main>
   );
 }
+
