@@ -49,9 +49,15 @@ class Bridge:
         return AnimeSama(self.site_url, client=self.source_client)
 
     async def cached(self, key: str, load):
+        now = asyncio.get_running_loop().time()
         held = self.cache.get(key)
-        if held and asyncio.get_running_loop().time() - held[0] < CACHE_SECONDS:
+        if held and now - held[0] < CACHE_SECONDS:
             return held[1]
+        self.cache = {
+            cache_key: entry
+            for cache_key, entry in self.cache.items()
+            if now - entry[0] < CACHE_SECONDS
+        }
         value = await load()
         self.cache[key] = (asyncio.get_running_loop().time(), value)
         return value
@@ -109,6 +115,11 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
+
+
+@app.get("/")
+async def index():
+    return {"service": "akari-anime-bridge", "health": "/health"}
 
 
 @app.get("/health")
@@ -191,32 +202,56 @@ async def releases():
 
 @app.get("/api/v1/catalogue")
 async def catalogue(search: str = Query(min_length=1, max_length=80)):
-    entries = await bridge.api().search(search)
-    return {"items": [{"title": item.name, "alternatives": item.alternative_names, "genres": item.genres, "languages": sorted(item.languages), "image": urljoin(bridge.site_url or "", item.image_url), "url": item.url} for item in entries[:40] if item.is_anime]}
+    async def load():
+        entries = await bridge.api().search(search)
+        return [
+            {
+                "title": item.name,
+                "alternatives": item.alternative_names,
+                "genres": item.genres,
+                "languages": sorted(item.languages),
+                "image": urljoin(bridge.site_url or "", item.image_url),
+                "url": item.url,
+            }
+            for item in entries[:40]
+            if item.is_anime
+        ]
+
+    items = await bridge.cached(f"catalogue:{search.casefold()}", load)
+    return {"items": items}
 
 
 @app.get("/api/v1/seasons")
 async def seasons(url: str = Query(min_length=1, max_length=600)):
-    page = Catalogue(bridge.catalogue_url(url), client=bridge.source_client)
-    entries = await page.seasons()
-    return {"items": [{"title": item.name, "url": item.url} for item in entries]}
+    async def load():
+        page = Catalogue(bridge.catalogue_url(url), client=bridge.source_client)
+        entries = await page.seasons()
+        return [{"title": item.name, "url": item.url} for item in entries]
+
+    items = await bridge.cached(f"seasons:{url}", load)
+    return {"items": items}
 
 
 @app.get("/api/v1/episodes")
 async def episodes(url: str = Query(min_length=1, max_length=700)):
     page_url = bridge.catalogue_url(url)
-    season = Season(page_url, client=bridge.source_client)
-    entries = await season.episodes()
-    output = []
-    now = asyncio.get_running_loop().time()
-    bridge.embeds = {url: expiry for url, expiry in bridge.embeds.items() if expiry > now}
-    for index, entry in enumerate(entries, start=1):
-        sources = {}
-        for language, player_groups in entry.languages.availables.items():
-            sources[language] = [player for group in player_groups for player in group]
-            bridge.embeds.update({player: now + 1800 for player in sources[language]})
-        output.append({"number": index, "title": entry.name or f"Episode {index}", "languages": sources})
-    return {"items": output}
+
+    async def load():
+        season = Season(page_url, client=bridge.source_client)
+        entries = await season.episodes()
+        output = []
+        now = asyncio.get_running_loop().time()
+        bridge.embeds = {embed: expiry for embed, expiry in bridge.embeds.items() if expiry > now}
+        for index, entry in enumerate(entries, start=1):
+            sources = {}
+            for language, player_groups in entry.languages.availables.items():
+                sources[language] = [player for group in player_groups for player in group]
+                bridge.embeds.update({player: now + 1800 for player in sources[language]})
+            output.append({"number": index, "title": entry.name or f"Episode {index}", "languages": sources})
+        return output
+
+    items = await bridge.cached(f"episodes:{page_url}", load)
+    return {"items": items}
 
 
 @app.post("/api/v1/resolve")

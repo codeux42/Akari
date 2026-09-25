@@ -15,7 +15,7 @@ export function AnimeGrid({
           onClick={() => onSelect(item)}
           className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 text-left hover:border-primary/50"
         >
-          <img src={item.image} alt="" className="h-20 w-14 rounded object-cover" />
+          <img src={item.image} alt="" loading="lazy" className="h-20 w-14 rounded object-cover" />
           <span>
             <strong>{item.title}</strong>
             <span className="mt-1 block text-xs text-muted">{item.languages.join(" · ")}</span>

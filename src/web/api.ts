@@ -33,6 +33,10 @@ export type AnimeEntry = {
 export type Season = { title: string; url: string };
 export type Episode = { number: number; title: string; languages: Record<string, string[]> };
 
+const GET_CACHE_MS = 4 * 60_000;
+const getCache = new Map<string, { expiresAt: number; value: unknown }>();
+const pendingGets = new Map<string, Promise<unknown>>();
+
 function record(value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value))
     throw new Error("Réponse invalide");
@@ -48,9 +52,62 @@ function list(value: unknown): unknown[] {
 }
 
 async function get(base: string, path: string): Promise<unknown> {
-  const response = await fetch(`${base}${path}`);
-  if (!response.ok) throw new Error(`Le service vidéo répond ${response.status}`);
-  return response.json() as Promise<unknown>;
+  const key = `akari:api:${base}${path}`;
+  const cacheable = !path.startsWith("/api/v1/releases") && !path.startsWith("/api/v1/episodes");
+  if (cacheable) {
+    const held = getCache.get(key) ?? readSessionCache(key);
+    if (held && held.expiresAt > Date.now()) return held.value;
+  }
+
+  const pending = pendingGets.get(key);
+  if (pending) return pending;
+
+  const request = (async () => {
+    const response = await fetch(`${base}${path}`);
+    if (!response.ok) throw new Error(`Le service vidéo répond ${response.status}`);
+    const value = (await response.json()) as unknown;
+    if (cacheable) {
+      const entry = { expiresAt: Date.now() + GET_CACHE_MS, value };
+      getCache.set(key, entry);
+      writeSessionCache(key, entry);
+    }
+    return value;
+  })();
+
+  pendingGets.set(key, request);
+  try {
+    return await request;
+  } finally {
+    if (pendingGets.get(key) === request) pendingGets.delete(key);
+  }
+}
+
+function readSessionCache(key: string): { expiresAt: number; value: unknown } | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return undefined;
+    const entry = record(JSON.parse(raw));
+    if (typeof entry.expiresAt !== "number" || !("value" in entry)) return undefined;
+    if (entry.expiresAt <= Date.now()) {
+      window.sessionStorage.removeItem(key);
+      return undefined;
+    }
+    const cached = { expiresAt: entry.expiresAt, value: entry.value };
+    getCache.set(key, cached);
+    return cached;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeSessionCache(key: string, entry: { expiresAt: number; value: unknown }): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(entry));
+  } catch {
+    return;
+  }
 }
 
 export async function readReleases(base: string): Promise<Release[]> {

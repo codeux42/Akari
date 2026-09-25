@@ -1,14 +1,21 @@
 import { ArrowRight, CalendarDays, Compass, Sparkles, Tv } from "lucide-react";
-import type { FeaturedAnime } from "./api.ts";
+import type { FeaturedAnime, PlanningDay } from "./api.ts";
+import { UpcomingGrid } from "./UpcomingGrid.tsx";
 
 type Destination = "nouveautes" | "planning" | "recherche";
 
 export function HomePage({
   featured,
+  featuredLoaded,
+  upcomingDays,
+  planningLoaded,
   onSelect,
   onNavigate,
 }: {
   featured: FeaturedAnime[];
+  featuredLoaded: boolean;
+  upcomingDays: PlanningDay[];
+  planningLoaded: boolean;
   onSelect: (title: string) => void;
   onNavigate: (tab: Destination) => void;
 }) {
@@ -25,7 +32,7 @@ export function HomePage({
             Bienvenue dans ton univers anime.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg">
-            Retrouve tes series, explore le catalogue et suis les prochaines sorties.
+            Retrouve tes séries, explore le catalogue et suis les prochaines sorties.
           </p>
           <button
             onClick={() => onNavigate("recherche")}
@@ -40,9 +47,9 @@ export function HomePage({
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              A decouvrir
+              À découvrir
             </p>
-            <h2 className="mt-2 font-display text-2xl font-bold">Anime recemment ajoutes</h2>
+            <h2 className="mt-2 font-display text-2xl font-bold">Animés récemment ajoutés</h2>
           </div>
           <button
             onClick={() => onNavigate("nouveautes")}
@@ -80,11 +87,16 @@ export function HomePage({
           </div>
         ) : (
           <div className="rounded-2xl border border-line bg-surface p-6 text-sm text-muted">
-            Les anime recemment ajoutes sont momentanement indisponibles. Tu peux toujours parcourir
-            le catalogue.
+            {featuredLoaded ? (
+              "Les animés récemment ajoutés sont momentanément indisponibles. Tu peux toujours parcourir le catalogue."
+            ) : (
+              "Chargement des animés…"
+            )}
           </div>
         )}
       </div>
+
+      <UpcomingGrid days={upcomingDays} loaded={planningLoaded} onSelect={onSelect} />
 
       <div>
         <div className="mb-4">
@@ -97,9 +109,9 @@ export function HomePage({
             className="group rounded-2xl border border-line bg-surface p-5 text-left transition hover:-translate-y-1 hover:border-primary/50"
           >
             <Tv className="mb-5 text-primary" size={24} />
-            <h3 className="font-display text-lg font-bold">Dernieres nouveautes</h3>
+            <h3 className="font-display text-lg font-bold">Dernières nouveautés</h3>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Retrouve les episodes recemment ajoutes.
+              Retrouve les épisodes récemment ajoutés.
             </p>
             <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
               Voir les sorties <ArrowRight size={15} />
@@ -123,7 +135,7 @@ export function HomePage({
             className="group rounded-2xl border border-line bg-surface p-5 text-left transition hover:-translate-y-1 hover:border-primary/50"
           >
             <Compass className="mb-5 text-primary" size={24} />
-            <h3 className="font-display text-lg font-bold">Explorer le catalogue</h3>
+              <h3 className="font-display text-lg font-bold">Explorer le catalogue</h3>
             <p className="mt-2 text-sm leading-6 text-muted">
               Recherche un titre et trouve ses saisons.
             </p>

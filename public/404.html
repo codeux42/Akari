@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Akari</title>
+    <script>
+      const routes = new Set(["nouveautes", "planning", "recherche", "profil"]);
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const route = parts.at(-1);
+
+      if (route && routes.has(route)) {
+        const baseParts = parts.slice(0, -1);
+        const base = baseParts.length ? `/${baseParts.join("/")}/` : "/";
+        const query = new URLSearchParams({
+          __route: `${route}${window.location.search}${window.location.hash}`,
+        });
+        window.location.replace(`${base}?${query}`);
+      }
+    </script>
+  </head>
+  <body>
+    <p>Cette page n’existe pas.</p>
+  </body>
+</html>
