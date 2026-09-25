@@ -8,8 +8,10 @@ const { version } = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf8"),
 ) as { version: string };
 
+const repositoryName = process.env.GITHUB_REPOSITORY?.split("/")[1] ?? "Akari";
+
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS === "true" ? "/akari/" : "./",
+  base: process.env.GITHUB_ACTIONS === "true" ? `/${repositoryName}/` : "./",
   define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [react()],
   resolve: {
