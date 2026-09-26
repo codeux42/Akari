@@ -1,0 +1,27 @@
+{
+    "services": {
+        "frontend": {
+            "root": ".",
+            "framework": "vite"
+        },
+        "anime-sama-bridge": {
+            "root": "services/anime-sama-bridge"
+        }
+    },
+    "rewrites": [
+        {
+            "source": "/api(/.*)?",
+            "destination": {
+                "type": "service",
+                "service": "anime-sama-bridge"
+            }
+        },
+        {
+            "source": "/(.*)",
+            "destination": {
+                "type": "service",
+                "service": "frontend"
+            }
+        }
+    ]
+}
