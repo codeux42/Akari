@@ -6,22 +6,19 @@
     },
     "anime-sama-bridge": {
       "root": "services/anime-sama-bridge",
-      "framework": "fastapi",
-      "entrypoint": "app.py"
+      "entrypoint": "app:app"
     }
   },
   "rewrites": [
     {
-      "source": "/api(/.*)?",
+      "source": "/api/(.*)",
       "destination": {
-        "type": "service",
         "service": "anime-sama-bridge"
       }
     },
     {
       "source": "/(.*)",
       "destination": {
-        "type": "service",
         "service": "frontend"
       }
     }
